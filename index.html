@@ -238,29 +238,56 @@ function words(s){var m=s.trim().match(/\S+/g);return m?m.length:0}
 function status(level,label){return '<span class="pill '+level+'">'+label+'</span>'}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
+function sections(text){
+  var found={},n=0;
+  text.split(/\r?\n/).forEach(function(line){
+    var m=line.match(/^\s*(Rol|Tarea|Contexto|Formato)\s*:\s*(.*)$/i);
+    if(m){found[m[1].toLowerCase()]=m[2].trim();n++}
+  });
+  return n>=2?found:null;
+}
+var VERB=/\b(redacta|redactar|escribe|escribir|analiza|analizar|compara|comparar|resume|resumir|dise[ñn]a|dise[ñn]ar|elabora|elaborar|crea|crear|genera|generar|propon(?:e|er|me)?|prepara|preparar|explica|explicar|enumera|enumerar|desarrolla|desarrollar|identifica|identificar|eval[uú]a|evaluar|traduce|traducir|calcula|calcular|planifica|planificar|organiza|organizar|define|definir|lista|listar|describe|describir|investiga|investigar)\b/i;
+function ctxHits(t){return (t.match(RULES.contextoPalabras)||[]).length+((t.match(/\d+/g)||[]).length>0?1:0)}
+function fmtHits(t){return (t.match(new RegExp(RULES.formato.source,'ig'))||[]).length}
 function validate(text){
   var items=[],ok=0;
   function add(name,level,msg){items.push({name:name,level:level,msg:msg});if(level==='ok')ok++}
-  // Rol
-  if(RULES.rol.test(text))add('Rol','ok','Define una identidad para la IA.');
-  else add('Rol','bad','Falta el rol. Empieza con «Eres un consultor senior de…» o «Actúa como…».');
-  // Tarea
-  var verb=RULES.tarea.test(text);
-  if(verb&&words(text)>=15)add('Tarea','ok','Hay una acción clara.');
-  else if(verb)add('Tarea','warn','Hay una acción, pero el objeto de la tarea es muy breve. Concreta qué debe producir.');
-  else add('Tarea','bad','Falta un verbo de acción claro (redacta, analiza, compara, diseña…).');
-  // Contexto
-  var hits=(text.match(RULES.contextoPalabras)||[]).length+((text.match(/\d+/g)||[]).length>0?1:0);
-  if(hits>=4)add('Contexto','ok','Incluye datos del cliente, público o limitaciones.');
-  else if(hits>=2)add('Contexto','warn','Algo de contexto. Añade público objetivo, presupuesto, zona o plazo.');
-  else add('Contexto','bad','Falta contexto: ¿para quién es?, ¿con qué presupuesto, plazo o limitaciones?');
-  // Formato
-  var fm=(text.match(new RegExp(RULES.formato.source,'ig'))||[]).length;
-  if(fm>=2)add('Formato','ok','Indica cómo entregar la información.');
-  else if(fm===1)add('Formato','warn','Formato mencionado de pasada. Define estructura, longitud y tono.');
-  else add('Formato','bad','Falta el formato de salida: tabla, lista, número de palabras, tono…');
+  var sec=sections(text);
+  if(sec){
+    // prompt con bloques rotulados: se valora el contenido de cada bloque, no el rótulo
+    var r=sec.rol||'',t=sec.tarea||'',c=sec.contexto||'',f=sec.formato||'';
+    if(words(r)>=4)add('Rol','ok','Define una identidad con detalle.');
+    else if(words(r)>=1)add('Rol','warn','Rol muy escueto. Añade profesión, especialidad y experiencia, p. ej. «consultor senior de marketing en energía renovable».');
+    else add('Rol','bad','El bloque Rol está vacío.');
+    if(!t)add('Tarea','bad','El bloque Tarea está vacío.');
+    else if(!VERB.test(t))add('Tarea','bad','No se reconoce un verbo de acción claro (redacta, analiza, compara, diseña…).');
+    else if(words(t)>=10)add('Tarea','ok','Hay una acción clara con su objeto.');
+    else add('Tarea','warn','Hay una acción, pero la tarea es breve. Concreta qué debe producir, para qué y con qué alcance.');
+    var h=ctxHits(c);
+    if(!c)add('Contexto','bad','El bloque Contexto está vacío.');
+    else if(words(c)>=12&&h>=3)add('Contexto','ok','Incluye datos del cliente, público o limitaciones.');
+    else if(words(c)>=4||h>=1)add('Contexto','warn','Contexto insuficiente. Añade público objetivo, presupuesto, zona, plazo o limitaciones.');
+    else add('Contexto','bad','Falta contexto útil.');
+    if(!f)add('Formato','bad','El bloque Formato está vacío.');
+    else if(fmtHits(f)>=1&&words(f)>=6)add('Formato','ok','Indica cómo entregar la información.');
+    else add('Formato','warn','Formato poco definido. Indica estructura (tabla, lista), longitud y tono.');
+  }else{
+    if(RULES.rol.test(text))add('Rol','ok','Define una identidad para la IA.');
+    else add('Rol','bad','Falta el rol. Empieza con «Eres un consultor senior de…» o «Actúa como…».');
+    var verb=VERB.test(text);
+    if(verb&&words(text)>=15)add('Tarea','ok','Hay una acción clara.');
+    else if(verb)add('Tarea','warn','Hay una acción, pero el objeto de la tarea es muy breve. Concreta qué debe producir.');
+    else add('Tarea','bad','Falta un verbo de acción claro (redacta, analiza, compara, diseña…).');
+    var hits=ctxHits(text);
+    if(hits>=4)add('Contexto','ok','Incluye datos del cliente, público o limitaciones.');
+    else if(hits>=2)add('Contexto','warn','Algo de contexto. Añade público objetivo, presupuesto, zona o plazo.');
+    else add('Contexto','bad','Falta contexto: ¿para quién es?, ¿con qué presupuesto, plazo o limitaciones?');
+    var fm=fmtHits(text);
+    if(fm>=2)add('Formato','ok','Indica cómo entregar la información.');
+    else if(fm===1)add('Formato','warn','Formato mencionado de pasada. Define estructura, longitud y tono.');
+    else add('Formato','bad','Falta el formato de salida: tabla, lista, número de palabras, tono…');
+  }
   var score=ok;
-  // Extras (no puntúan)
   var extras=[];
   var n=words(text);
   if(n===0)extras.push(['Longitud','bad','El prompt está vacío.']);
@@ -277,6 +304,7 @@ function validate(text){
   else extras.push(['Datos sensibles','ok','No se detectan correos, teléfonos, DNI, IBAN ni clientes cargados.']);
   if(RULES.verificacion.test(text))extras.push(['Verificación','ok','Pide fuentes o prudencia ante datos dudosos.']);
   else extras.push(['Verificación','warn','Sugerencia: añade «cita las fuentes» o «indica si no estás seguro de un dato» para reducir alucinaciones.']);
+  extras.push(['Coherencia','warn','No se puede comprobar automáticamente. Revisa tú que el rol, la tarea y el contexto encajan entre sí (por ejemplo, un físico cuántico no es el rol adecuado para planos de una vivienda).']);
   return {items:items,extras:extras,score:score};
 }
 
@@ -288,7 +316,7 @@ function render(){
   var h='<div class="score">Estructura: '+r.score+' de 4 componentes '+status(lvl,r.score===4?'completa':'incompleta')+'</div><div class="result">';
   r.items.concat(r.extras.map(function(e){return {name:e[0],level:e[1],msg:e[2]}})).forEach(function(i){
     var lab={ok:'Correcto',warn:'Mejorable',bad:'Falta'}[i.level];
-    if(['Longitud','Datos sensibles','Verificación'].indexOf(i.name)>-1)lab={ok:'Correcto',warn:'Sugerencia',bad:'Atención'}[i.level];
+    if(['Longitud','Datos sensibles','Verificación','Coherencia'].indexOf(i.name)>-1)lab={ok:'Correcto',warn:'Sugerencia',bad:'Atención'}[i.level];
     h+='<div><b>'+esc(i.name)+'</b>'+status(i.level,lab)+'<span>'+esc(i.msg)+'</span></div>';
   });
   $('verdict').innerHTML=h+'</div>';
