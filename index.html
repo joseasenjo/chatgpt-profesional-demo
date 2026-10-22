@@ -46,6 +46,12 @@ table{border-collapse:collapse;width:100%;font-size:.9rem}
 th,td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 th{position:sticky;top:0;background:var(--card)}
 pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;align-items:center}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--text);padding:4px 10px;border-radius:999px;font:inherit;font-size:.85rem;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--accent)}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;background:var(--bg)}
+.card h3{margin-top:0}
+.card p{margin:6px 0}
 footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media print{body{background:#fff;color:#000}body.printing header,body.printing main,body.printing footer{display:none}body.printing #report{display:block}}
@@ -78,6 +84,17 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
 <section class="panel" id="p1" role="tabpanel" aria-labelledby="t1" hidden>
   <h2>Constructor y validador de prompts</h2>
   <p class="lead">Fórmula del curso: <b>Rol + Tarea + Contexto + Formato</b>. Rellena los cuatro bloques, construye el prompt y comprueba si la estructura está completa. El validador revisa que cada componente esté presente; la calidad del contenido la juzga una persona.</p>
+  <div class="card noprint" id="practice">
+    <h3>Practica con un reto</h3>
+    <p class="hint">Te propongo una situación y tú inventas el rol, el contexto y el formato. El validador te dice en directo qué te falta.</p>
+    <button class="btn" id="chal" type="button">Dame un reto</button>
+    <div id="chal-box" hidden>
+      <p><b id="chal-text"></b></p>
+      <button class="btn sec" id="chal-hint" type="button">Ver una pista</button>
+      <ul id="chal-hints" class="hint" style="margin:6px 0"></ul>
+      <p id="chal-status" role="status" aria-live="polite"></p>
+    </div>
+  </div>
   <div class="noprint">
     <button class="btn sec" id="ex-simple" type="button">Cargar el prompt simple de Javier</button>
     <button class="btn sec" id="ex-opt" type="button">Cargar un ejemplo optimizado</button>
@@ -104,6 +121,23 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
 
   <div id="verdict" aria-live="polite"></div>
   <div class="note">Esta revisión es una comprobación de estructura por reglas, no una evaluación de calidad. Si quieres una segunda opinión de una IA, usa «Copiar prompt de revisión» y pégalo en tu propio ChatGPT.</div>
+
+  <div class="card noprint" id="compare">
+    <h3>Mejora tu propio prompt</h3>
+    <p class="hint">Escribe un prompt como lo harías normalmente, en una frase. La página te dice qué bloques le faltan y cómo completarlos.</p>
+    <label for="cmp-in">Tu prompt simple</label>
+    <textarea id="cmp-in" placeholder="Ej.: Escribe un plan de estudio para aprender inglés"></textarea>
+    <button class="btn" id="cmp-run" type="button">Ver qué le falta</button>
+    <div id="cmp-out" aria-live="polite"></div>
+    <button class="btn sec" id="cmp-load" type="button" hidden>Llevarlo al constructor y mejorarlo</button>
+    <p id="cmp-status" class="score" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="noprint" id="gallery">
+    <h3>Galería de ejemplos completos</h3>
+    <p class="hint">Seis prompts de sectores distintos con la fórmula completa. Cárgalos en el constructor, cambia los datos y pruébalos en tu ChatGPT.</p>
+    <div id="gallery-list"></div>
+  </div>
 </section>
 
 <section class="panel" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
@@ -324,7 +358,7 @@ function sections(text){
   });
   return n>=2?found:null;
 }
-var VERB=/\b(redacta|redactar|escribe|escribir|analiza|analizar|compara|comparar|resume|resumir|dise[ñn]a|dise[ñn]ar|elabora|elaborar|crea|crear|genera|generar|propon(?:e|er|me)?|prepara|preparar|explica|explicar|enumera|enumerar|desarrolla|desarrollar|identifica|identificar|eval[uú]a|evaluar|traduce|traducir|calcula|calcular|planifica|planificar|organiza|organizar|define|definir|lista|listar|describe|describir|investiga|investigar)\b/i;
+var VERB=/\b(redacta|redactar|escribe|escribir|analiza|analizar|compara|comparar|resume|resumir|dise[ñn]a|dise[ñn]ar|elabora|elaborar|crea|crear|genera|generar|propon(?:e|er|me)?|prepara|preparar|explica|explicar|enumera|enumerar|desarrolla|desarrollar|identifica|identificar|eval[uú]a|evaluar|traduce|traducir|calcula|calcular|planifica|planificar|organiza|organizar|define|definir|lista|listar|describe|describir|investiga|investigar|revisa|revisar|corrige|corregir|mejora|mejorar|optimiza|optimizar|adapta|adaptar|convierte|convertir|recomienda|recomendar|sugiere|sugerir|clasifica|clasificar|extrae|extraer|simplifica|simplificar|reescribe|reescribir|responde|responder|presenta|presentar|valora|valorar)\b/i;
 function ctxHits(t){return (t.match(RULES.contextoPalabras)||[]).length+((t.match(/\d+/g)||[]).length>0?1:0)}
 function fmtHits(t){return (t.match(new RegExp(RULES.formato.source,'ig'))||[]).length}
 function validate(text){
@@ -388,7 +422,7 @@ function validate(text){
 
 function render(){
   var text=$('prompt').value;
-  if(!text.trim()){$('verdict').innerHTML='';return}
+  if(!text.trim()){$('verdict').innerHTML='';updateStatus();return}
   var r=validate(text);
   var lvl=r.score===4?'ok':(r.score>=2?'warn':'bad');
   var h='<div class="score">Estructura: '+r.score+' de 4 componentes '+status(lvl,r.score===4?'completa':'incompleta')+'</div><div class="result">';
@@ -397,7 +431,7 @@ function render(){
     if(['Longitud','Datos sensibles','Verificación','Coherencia'].indexOf(i.name)>-1)lab={ok:'Correcto',warn:'Sugerencia',bad:'Atención'}[i.level];
     h+='<div><b>'+esc(i.name)+'</b>'+status(i.level,lab)+'<span>'+esc(i.msg)+'</span></div>';
   });
-  $('verdict').innerHTML=h+'</div>';
+  $('verdict').innerHTML=h+'</div>';updateStatus();
 }
 function build(){
   var p=[];
@@ -446,6 +480,105 @@ $('copy-review').addEventListener('click',function(){
   var t='Actúa como un experto en ingeniería de prompts. Evalúa el siguiente prompt según la fórmula Rol + Tarea + Contexto + Formato. Para cada componente indica si está presente y si es suficientemente concreto, señala qué falta y propón una versión mejorada. Si algún dato del prompt podría ser confidencial, avísame. Responde con una tabla y después la versión mejorada.\n\nPrompt a evaluar:\n"""\n'+$('prompt').value+'\n"""';
   copy(t,'Prompt de revisión copiado: pégalo en tu ChatGPT.');
 });
+
+/* ---------- práctica: retos, ideas, comparador y galería ---------- */
+var CHALLENGES=[
+  {t:'Redacta un plan para que una cafetería de barrio atraiga a clientes jóvenes.',h:['Rol: ¿qué profesional resolvería esto de verdad? Piensa en una profesión y una especialidad.','Contexto: inventa el público (edad), el presupuesto y el plazo.','Formato: ¿una tabla, una lista? ¿Cuántas palabras y qué tono?']},
+  {t:'Explica a los clientes de una asesoría qué cambia con el RGPD.',h:['Rol: alguien que domine la normativa y sepa explicarla a no expertos.','Contexto: quién lo lee, qué sabe ya y qué límite tiene (no es asesoramiento individual).','Formato: pide un resumen corto y una lista de comprobación.']},
+  {t:'Diseña una campaña para que un gimnasio de barrio recupere socios tras las bajas de enero.',h:['Rol: un perfil de marketing con experiencia en servicios locales.','Contexto: número de socios, presupuesto, plazo y qué se ha probado ya.','Formato: una tabla con acciones, canal, coste y plazo.']},
+  {t:'Prepara el comunicado que un colegio envía a las familias por un cambio de horario.',h:['Rol: quién redactaría esto en un colegio.','Contexto: a quién va, desde cuándo cambia el horario y qué dudas tendrán.','Formato: tono cercano y formal a la vez, con una longitud máxima.']},
+  {t:'Mejora las descripciones de los productos de una tienda online de ropa de segunda mano.',h:['Rol: alguien que escriba textos que vendan.','Contexto: tipo de cliente, valores de la tienda y límite de caracteres.','Formato: una plantilla repetible para cada producto.']},
+  {t:'Informa a los vecinos de un pueblo del nuevo sistema de recogida de residuos.',h:['Rol: una persona de comunicación municipal.','Contexto: edad media de los vecinos, fecha de inicio y canales disponibles.','Formato: lenguaje sencillo y un esquema claro de qué va en cada contenedor.']},
+  {t:'Elabora el discurso de presentación de una startup ante posibles inversores.',h:['Rol: alguien con experiencia presentando proyectos.','Contexto: sector, fase de la empresa, cuánto dinero se busca y a quién se presenta.','Formato: duración en minutos y estructura por apartados.']},
+  {t:'Crea una publicación de redes sociales para que los pacientes de una clínica dental pidan su revisión anual.',h:['Rol: un perfil de comunicación sanitaria.','Contexto: tipo de pacientes, tono de la clínica y qué no se puede prometer.','Formato: texto breve, tono cercano y propuesta de imagen.']},
+  {t:'Prepara ejercicios de repaso de fracciones para un grupo de alumnos con niveles distintos.',h:['Rol: una persona docente con experiencia en la materia.','Contexto: curso, número de alumnos, tiempo disponible y recursos del aula.','Formato: ejercicios graduados por dificultad, con soluciones.']},
+  {t:'Responde con educación a una reseña negativa de una empresa de reformas.',h:['Rol: quien lleva la atención al cliente.','Contexto: qué dijo el cliente, qué pasó de verdad y qué se puede ofrecer.','Formato: pocas frases, tono empático y sin culpar al cliente.']}
+];
+var SUGGEST={
+  'f-rol':['Eres un consultor senior de marketing digital especializado en comercio local y con diez años de experiencia.','Eres una profesora de secundaria con experiencia en atención a la diversidad.','Eres un abogado especialista en protección de datos y en el RGPD.','Eres una nutricionista con experiencia en divulgación para el público general.','Eres un desarrollador web senior especializado en accesibilidad.'],
+  'f-tarea':['Redacta un plan de acción para…','Compara tres opciones de… y recomienda una justificando la elección.','Resume en puntos clave el siguiente texto:','Diseña una propuesta paso a paso para…','Elabora una lista de comprobación para…'],
+  'f-ctx':['Público objetivo: personas de 25 a 40 años, activas en redes sociales.','Presupuesto de 2.000 € y plazo de tres meses.','Zona: ciudad mediana del norte de España; no hay equipo de diseño propio.','Limitación: usa solo información pública y no inventes datos de clientes.','Objetivo: conseguir 50 clientes nuevos en seis meses.'],
+  'f-fmt':['Una tabla en markdown con acción, canal, coste y plazo.','Una lista numerada de cinco pasos, cada uno con un ejemplo, en tono cercano.','Máximo 150 palabras, tono profesional y sin tecnicismos.','Cita las fuentes de los datos e indica si no estás seguro de alguno.','Estructura: introducción, tres apartados con epígrafes y conclusión.']
+};
+Object.keys(SUGGEST).forEach(function(id){
+  var field=$(id),box=document.createElement('div');
+  box.className='chips noprint';
+  var lab=document.createElement('span');lab.className='hint';lab.textContent='Ideas:';box.appendChild(lab);
+  SUGGEST[id].forEach(function(txt){
+    var b=document.createElement('button');b.type='button';b.className='chip';
+    b.textContent=txt.length>46?txt.slice(0,44)+'…':txt;b.title=txt;
+    b.addEventListener('click',function(){
+      var append=(id==='f-ctx'||id==='f-fmt')&&field.value.trim()!=='';
+      field.value=append?field.value.trim()+' '+txt:txt;
+      build();field.focus();
+    });
+    box.appendChild(b);
+  });
+  field.parentNode.insertBefore(box,field.nextSibling);
+});
+['f-rol','f-tarea','f-ctx','f-fmt'].forEach(function(id){$(id).addEventListener('input',build)});
+
+var chalActive=false,chalLast=-1,chalHint=0,chalCur=null,cmpBefore=null;
+$('chal').addEventListener('click',function(){
+  var i;do{i=Math.floor(Math.random()*CHALLENGES.length)}while(i===chalLast&&CHALLENGES.length>1);
+  chalLast=i;chalCur=CHALLENGES[i];chalHint=0;chalActive=true;
+  load('',chalCur.t,'','');
+  $('chal-text').textContent='Reto: '+chalCur.t;
+  $('chal-hints').innerHTML='';$('chal-hint').hidden=false;$('chal-box').hidden=false;
+  $('chal').textContent='Dame otro reto';
+  $('f-rol').focus();
+});
+$('chal-hint').addEventListener('click',function(){
+  if(!chalCur||chalHint>=chalCur.h.length)return;
+  var li=document.createElement('li');li.textContent=chalCur.h[chalHint++];$('chal-hints').appendChild(li);
+  if(chalHint>=chalCur.h.length)$('chal-hint').hidden=true;
+});
+function currentScore(){var t=$('prompt').value;return t.trim()?validate(t).score:0}
+function updateStatus(){
+  var sc=currentScore();
+  if(chalActive)$('chal-status').textContent=sc===4?'¡Reto superado! Los cuatro componentes están completos. Cópialo y pruébalo en tu ChatGPT para ver la diferencia.':'Estructura: '+sc+' de 4. Revisa abajo qué te falta.';
+  if(cmpBefore!==null)$('cmp-status').textContent='Antes: '+cmpBefore+' de 4 · Ahora: '+sc+' de 4';
+}
+var QUESTIONS={'Rol':'¿Quién debería responder? Elige una profesión y una especialidad.','Tarea':'Concreta qué debe producir y con qué alcance.','Contexto':'¿Para quién es y con qué presupuesto, plazo o limitaciones?','Formato':'¿Cómo lo quieres: tabla, lista, número de palabras, tono?'};
+$('cmp-run').addEventListener('click',function(){
+  var t=$('cmp-in').value.trim();
+  if(!t){$('cmp-out').innerHTML='<p class="hint">Escribe primero tu prompt.</p>';return}
+  var r=validate(t);
+  var h='<p class="score">Tu prompt cubre '+r.score+' de 4 componentes.</p><div class="result">';
+  r.items.forEach(function(i){
+    if(i.level==='ok')h+='<div><b>'+esc(i.name)+'</b>'+status('ok','Correcto')+'<span>Ya está.</span></div>';
+    else h+='<div><b>'+esc(i.name)+'</b>'+status(i.level==='bad'?'bad':'warn',i.level==='bad'?'Falta':'Mejorable')+'<span>'+esc(QUESTIONS[i.name])+'</span></div>';
+  });
+  $('cmp-out').innerHTML=h+'</div>';
+  $('cmp-load').hidden=false;
+});
+$('cmp-load').addEventListener('click',function(){
+  var t=$('cmp-in').value.trim();if(!t)return;
+  cmpBefore=validate(t).score;
+  load('',t,'','');
+  $('f-rol').focus();
+  $('p1').scrollIntoView({behavior:'smooth'});
+});
+var GALLERY=[
+  {s:'Marketing',rol:'Eres un consultor senior de marketing digital especializado en comercio local y con diez años de experiencia.',tarea:'Redacta un plan de acción de redes sociales para los próximos tres meses que atraiga clientes jóvenes a una cafetería de barrio.',ctx:'Cliente: cafetería independiente con dos empleados en una ciudad mediana. Público objetivo: personas de 18 a 30 años. Presupuesto: 500 € al mes. Limitación: no hay equipo de diseño y el objetivo es conseguir 300 seguidores nuevos y 40 reservas al mes.',fmt:'Una tabla en markdown con semana, acción, canal y coste, y después un resumen de 100 palabras en tono cercano. Cita las fuentes de cualquier dato de mercado e indica si no estás seguro de alguno.'},
+  {s:'Educación',rol:'Eres una profesora de matemáticas de secundaria con experiencia en atención a alumnado con dificultades de aprendizaje.',tarea:'Diseña una sesión de repaso de fracciones de cincuenta minutos con actividades graduadas por dificultad y una pequeña evaluación final.',ctx:'Público: alumnos de primero de ESO, en un grupo de 25 con niveles muy distintos. Plazo: una sesión antes del examen del viernes. Limitación: no hay ordenadores en el aula, solo pizarra y fichas impresas. Objetivo: que al menos el 80 % del grupo resuelva problemas básicos.',fmt:'Una tabla con minuto, actividad y material, seguida de cinco ejercicios con solución. Lenguaje sencillo y tono motivador, con un máximo de 400 palabras en total.'},
+  {s:'Salud (divulgación)',rol:'Eres una nutricionista con experiencia en divulgación sanitaria para el público general.',tarea:'Redacta un folleto informativo sobre hábitos de alimentación saludable para personas mayores de 65 años.',ctx:'Público: personas mayores de 65 años de un centro de día, sin conocimientos técnicos y con lectura cómoda. Zona: ciudad de tamaño medio. Limitación: es material divulgativo y no sustituye el consejo individual de un profesional sanitario. Plazo: una semana.',fmt:'Un folleto de una página con título, cinco consejos en una lista numerada y un cuadro de alimentos recomendados. Tono cercano, frases cortas y un máximo de 250 palabras.'},
+  {s:'Legal (protección de datos)',rol:'Eres un abogado especialista en protección de datos y en el RGPD con experiencia en asesoría a pymes.',tarea:'Explica en lenguaje claro qué obligaciones tiene una pequeña tienda online al recoger datos personales de sus clientes y propón una lista de comprobación.',ctx:'Público: la propietaria de una tienda online de ropa, sin formación jurídica. Sector: comercio electrónico en España. Presupuesto limitado y plazo de un mes para adaptarse. Limitación: no es asesoramiento legal individual y debe indicarse que conviene consultar a un profesional.',fmt:'Un resumen de 120 palabras y una lista de comprobación de diez puntos, en tono claro y sin jerga. Cita la normativa en la que te basas e indica si no estás seguro de algún punto.'},
+  {s:'Cocina',rol:'Eres un chef con experiencia en cocina saludable y en menús económicos para familias.',tarea:'Elabora un menú semanal de cenas ligeras con su lista de la compra agrupada por secciones del supermercado.',ctx:'Público: una familia de cuatro personas, con dos niños de 8 y 10 años y un adulto vegetariano. Presupuesto: 70 € por semana. Limitación: máximo 30 minutos de preparación por cena y sin horno. Objetivo: variedad y poco desperdicio.',fmt:'Una tabla con día, plato y tiempo de preparación, y después la lista de la compra en viñetas. Tono práctico y un máximo de 300 palabras.'},
+  {s:'Programación web',rol:'Eres un desarrollador web senior especializado en accesibilidad y en código limpio.',tarea:'Revisa el siguiente formulario de contacto en HTML y propón mejoras de accesibilidad con el código corregido.',ctx:'Cliente: asociación sin ánimo de lucro con una página web sencilla. Público: personas usuarias de lector de pantalla y de móvil. Limitación: sin frameworks, solo HTML y CSS, y compatibilidad con navegadores de hace dos años. Plazo: dos días.',fmt:'Una lista de cinco problemas con su gravedad, el fragmento de código corregido de cada uno y un breve resumen final. Explica cada cambio en dos frases y cita el criterio de accesibilidad aplicado.'}
+];
+(function(){
+  var host=$('gallery-list');
+  GALLERY.forEach(function(g,i){
+    var card=document.createElement('div');card.className='card';
+    card.innerHTML='<h3>'+esc(g.s)+'</h3><p class="hint">'+esc(g.tarea)+'</p>';
+    var b1=document.createElement('button');b1.type='button';b1.className='btn sec';b1.textContent='Cargar en el constructor';
+    b1.addEventListener('click',function(){load(g.rol,g.tarea,g.ctx,g.fmt);$('p1').scrollIntoView({behavior:'smooth'})});
+    var b2=document.createElement('button');b2.type='button';b2.className='btn sec';b2.textContent='Copiar prompt';
+    b2.addEventListener('click',function(){copy('Rol: '+g.rol+'\n\nTarea: '+g.tarea+'\n\nContexto: '+g.ctx+'\n\nFormato: '+g.fmt,'Prompt de «'+g.s+'» copiado.')});
+    card.appendChild(b1);card.appendChild(b2);host.appendChild(card);
+  });
+})();
 
 /* ---------- 2. anonimización ---------- */
 var table=null; // {header:[], rows:[[]]}
