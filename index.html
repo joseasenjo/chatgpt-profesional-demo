@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatGPT profesional · demostración</title>
+<meta name="description" content="Demostración del trabajo final: constructor y validador de prompts, anonimización de datos en el navegador y lista de verificación human-in-the-loop.">
+<meta name="author" content="jlasenjo">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--muted:#5b6475;--line:#dde1e8;--accent:#1f5fbf;--ok:#1d7a46;--warn:#a86400;--bad:#b3261e;--okbg:#e5f4ea;--warnbg:#fff1d6;--badbg:#fbe3e1}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--text:#e6e9ef;--muted:#9aa3b5;--line:#2b3240;--accent:#6aa3ff;--ok:#5fd18d;--warn:#f0b24f;--bad:#ff8a80;--okbg:#17301f;--warnbg:#372a10;--badbg:#3a1a18}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header,main,footer{max-width:900px;margin:0 auto;padding:0 16px}
+header{padding-top:24px}
+h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.2rem;margin:0 0 8px}
+h3{font-size:1rem;margin:16px 0 6px}
+.lead{color:var(--muted);margin:0 0 16px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 14px;border-radius:8px;font:inherit;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+section.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:20px}
+section.panel[hidden]{display:none}
+label{display:block;font-weight:600;margin:12px 0 4px}
+.hint{font-weight:400;color:var(--muted);font-size:.9rem}
+input[type=text],input[type=date],textarea,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+textarea{min-height:90px;resize:vertical}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:9px 14px;border-radius:8px;font:inherit;cursor:pointer;margin:8px 8px 0 0}
+.btn.sec{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.row{grid-template-columns:1fr}}
+.checks{list-style:none;padding:0;margin:8px 0}
+.checks li{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.82rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.bad{background:var(--badbg);color:var(--bad)}
+.result{display:grid;gap:6px;margin-top:10px}
+.result div{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.result b{min-width:110px}
+.score{font-size:1.1rem;font-weight:700;margin-top:10px}
+.note{background:var(--warnbg);color:var(--text);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;margin:10px 0;font-size:.95rem}
+.private{background:var(--okbg);border-left-color:var(--ok)}
+.tablewrap{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--card)}
+pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media print{body{background:#fff;color:#000}body.printing header,body.printing main,body.printing footer{display:none}body.printing #report{display:block}}
+</style>
+</head>
+<body>
+<header>
+  <h1>ChatGPT profesional · demostración</h1>
+  <p class="lead">Trabajo final: implementación estratégica de ChatGPT en el entorno profesional. Tres herramientas que ponen en práctica la teoría. Todo se ejecuta en tu navegador: no se envía ningún dato a ningún servidor.</p>
+  <nav role="tablist" aria-label="Herramientas">
+    <button role="tab" id="t1" aria-selected="true" aria-controls="p1">1 · Prompts</button>
+    <button role="tab" id="t2" aria-selected="false" aria-controls="p2">2 · Privacidad</button>
+    <button role="tab" id="t3" aria-selected="false" aria-controls="p3">3 · Human-in-the-loop</button>
+  </nav>
+</header>
+<main>
+
+<section class="panel" id="p1" role="tabpanel" aria-labelledby="t1">
+  <h2>Constructor y validador de prompts</h2>
+  <p class="lead">Fórmula del curso: <b>Rol + Tarea + Contexto + Formato</b>. Rellena los cuatro bloques, construye el prompt y comprueba si la estructura está completa. El validador revisa que cada componente esté presente; la calidad del contenido la juzga una persona.</p>
+  <div class="noprint">
+    <button class="btn sec" id="ex-simple" type="button">Cargar el prompt simple de Javier</button>
+    <button class="btn sec" id="ex-opt" type="button">Cargar un ejemplo optimizado</button>
+    <button class="btn sec" id="ex-clear" type="button">Vaciar</button>
+  </div>
+  <label for="f-rol">Rol <span class="hint">Qué identidad debe adoptar la IA</span></label>
+  <input type="text" id="f-rol" placeholder="Eres un consultor senior de marketing estratégico especializado en energía renovable">
+  <label for="f-tarea">Tarea <span class="hint">La acción principal, clara</span></label>
+  <textarea id="f-tarea" placeholder="Redacta una propuesta de estrategia de marketing digital para…"></textarea>
+  <label for="f-ctx">Contexto <span class="hint">Datos, público objetivo, limitaciones</span></label>
+  <textarea id="f-ctx" placeholder="Cliente: pyme instaladora de paneles solares en Bizkaia. Público: propietarios de viviendas unifamiliares. Presupuesto: 15.000 € para 6 meses…"></textarea>
+  <label for="f-fmt">Formato <span class="hint">Cómo debe entregarse</span></label>
+  <textarea id="f-fmt" placeholder="Tabla en markdown con acciones, canal, coste y plazo; después un resumen de 120 palabras. Tono profesional y cercano."></textarea>
+  <button class="btn" id="build" type="button">Construir prompt</button>
+
+  <h3>Prompt a validar <span class="hint">(también puedes pegar aquí cualquier prompt)</span></h3>
+  <label for="prompt" class="hint" style="font-weight:400;margin-top:0">Texto del prompt</label>
+  <textarea id="prompt" style="min-height:150px"></textarea>
+  <button class="btn sec" id="copy" type="button">Copiar prompt</button>
+  <button class="btn sec" id="copy-review" type="button">Copiar prompt de revisión para ChatGPT</button>
+  <span id="copied" class="hint" role="status" aria-live="polite"></span>
+
+  <div id="verdict" aria-live="polite"></div>
+  <div class="note">Esta revisión es una comprobación de estructura por reglas, no una evaluación de calidad. Si quieres una segunda opinión de una IA, usa «Copiar prompt de revisión» y pégalo en tu propio ChatGPT.</div>
+</section>
+
+<section class="panel" id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+  <h2>Anonimización de datos antes de usar la IA</h2>
+  <p class="lead">Caso de Javier: un Excel con los 50 clientes principales y sus ventas. Sube un CSV o Excel de prueba, elige qué columnas proteger y descarga la versión limpia.</p>
+  <div class="note private"><b>Privacidad por diseño.</b> El archivo se lee en tu navegador y no sale de tu equipo. Aun así, usa solo datos de prueba: este ejemplo es ficticio.</div>
+  <label for="file">Archivo CSV o Excel (.xlsx)</label>
+  <input type="file" id="file" accept=".csv,.xlsx,.xls,text/csv">
+  <button class="btn sec" id="load-sample" type="button">Cargar los 50 clientes ficticios de ejemplo</button>
+  <div id="anon-ui" hidden>
+    <h3>1. Columnas con nombres o identificadores <span class="hint">(se sustituyen por «Cliente A», «Cliente B»…)</span></h3>
+    <div id="cols-names"></div>
+    <h3>2. Columnas numéricas <span class="hint">(importes)</span></h3>
+    <div id="cols-nums"></div>
+    <div id="auto-flags"></div>
+    <button class="btn" id="anon-run" type="button">Anonimizar</button>
+  </div>
+  <div id="anon-out" hidden>
+    <h3>Vista previa de la versión limpia</h3>
+    <div class="tablewrap" id="prev"></div>
+    <button class="btn" id="dl-clean" type="button">Descargar versión limpia (CSV)</button>
+    <button class="btn sec" id="dl-map" type="button">Descargar tabla de equivalencias (CSV)</button>
+    <div class="note"><b>La tabla de equivalencias es la llave.</b> Guárdala aparte, en un lugar seguro, y nunca la subas a la IA. Con ella, tú reconviertes «Cliente A» en el nombre real cuando recibas el análisis.</div>
+  </div>
+  <h3>Proceso que sigue la página</h3>
+  <ol>
+    <li>Sustituye los nombres por etiquetas neutras y guarda la correspondencia aparte (seudonimización).</li>
+    <li>Convierte los importes en un índice (media = 100) o en cuartiles, de modo que se mantienen las tendencias sin mostrar cifras reales.</li>
+    <li>Detecta y enmascara correos, teléfonos, DNI e IBAN que aparezcan en cualquier celda.</li>
+    <li>Recuerda revisar a mano: combinaciones de datos (sector + ciudad + tamaño) pueden identificar a un cliente aunque no aparezca su nombre.</li>
+  </ol>
+</section>
+
+<section class="panel" id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+  <h2>Panel Human-in-the-loop</h2>
+  <p class="lead">La IA propone, la persona responde. Pega el borrador generado, completa la lista de verificación obligatoria y exporta el resultado con el responsable que lo firma.</p>
+  <label for="draft">Borrador generado por la IA</label>
+  <textarea id="draft" style="min-height:140px" placeholder="Pega aquí el texto del borrador…"></textarea>
+  <h3>Lista de verificación obligatoria</h3>
+  <ul class="checks" id="checks"></ul>
+  <div class="row">
+    <div><label for="who">Responsable de la revisión</label><input type="text" id="who" placeholder="Nombre y cargo"></div>
+    <div><label for="when">Fecha</label><input type="date" id="when"></div>
+  </div>
+  <p id="gate" class="hint" role="status" aria-live="polite"></p>
+  <button class="btn" id="exp-txt" type="button" disabled>Exportar como texto</button>
+  <button class="btn sec" id="exp-pdf" type="button" disabled>Imprimir o guardar en PDF</button>
+  <div class="note">Responsabilidad: la herramienta no puede responder de un error. Quien envía el informe al cliente, la agencia, responde legal y éticamente de su contenido. Por eso la revisión humana no es opcional.</div>
+</section>
+
+</main>
+<div id="report" hidden style="max-width:900px;margin:0 auto;padding:16px"></div>
+<footer>
+  Diseño y desarrollo: jlasenjo. Sin cookies, sin seguimiento y sin envío de datos. El código es público y se puede revisar.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script type="text/plain" id="sample-csv">Cliente;Correo;Ciudad;Sector;Ventas anuales (EUR)
+Kilo Alimentación S.L.;contacto@kilo1.example;Málaga;Energía;43315
+Cima Educación S.L.;contacto@cima2.example;Pamplona;Industria;209726
+Solaris Consultores S.L.;contacto@solaris3.example;Pamplona;Servicios;37658
+Cima Textil S.L.;contacto@cima4.example;Málaga;Industria;144176
+Cima Ingeniería S.L.;contacto@cima5.example;Málaga;Industria;314460
+Delta Energía S.L.;contacto@delta6.example;Santander;Industria;320568
+Solaris Textil S.L.;contacto@solaris7.example;Bilbao;Servicios;42422
+Rumbo Educación S.L.;contacto@rumbo8.example;Valencia;Comercio;237749
+Eólica Ingeniería S.L.;contacto@eolica9.example;Madrid;Tecnología;179733
+Faro Logística S.L.;contacto@faro10.example;Santander;Tecnología;352974
+Gaia Construcciones S.L.;contacto@gaia11.example;Madrid;Tecnología;391351
+Cima Hostelería S.L.;contacto@cima12.example;Bilbao;Tecnología;125981
+Prisma Farma S.L.;contacto@prisma13.example;Pamplona;Salud;182703
+Oasis Hostelería S.L.;contacto@oasis14.example;Barcelona;Comercio;175164
+Horizonte Seguros S.L.;contacto@horizonte15.example;Valencia;Energía;145976
+Júpiter Ingeniería S.L.;contacto@jupiter16.example;Barcelona;Comercio;400439
+Oasis Digital S.L.;contacto@oasis17.example;Santander;Industria;79900
+Quark Textil S.L.;contacto@quark18.example;Valencia;Turismo;197335
+Eólica Transportes S.L.;contacto@eolica19.example;Barcelona;Salud;38555
+Cima Seguros S.L.;contacto@cima20.example;Pamplona;Tecnología;182494
+Kilo Agro S.L.;contacto@kilo21.example;Vitoria;Tecnología;278400
+Solaris Seguros S.L.;contacto@solaris22.example;Barcelona;Industria;67071
+Iberia Servicios S.L.;contacto@iberia23.example;Madrid;Industria;401338
+Júpiter Farma S.L.;contacto@jupiter24.example;Santander;Energía;251644
+Júpiter Agro S.L.;contacto@jupiter25.example;Málaga;Energía;199930
+Aurora Servicios S.L.;contacto@aurora26.example;Vitoria;Servicios;338297
+Delta Servicios S.L.;contacto@delta27.example;Bilbao;Servicios;168697
+Eólica Agro S.L.;contacto@eolica28.example;Sevilla;Salud;222970
+Prisma Logística S.L.;contacto@prisma29.example;Valencia;Salud;228577
+Rumbo Digital S.L.;contacto@rumbo30.example;Valencia;Turismo;243717
+Norte Construcciones S.L.;contacto@norte31.example;Málaga;Servicios;97126
+Cima Alimentación S.L.;contacto@cima32.example;Valencia;Servicios;363252
+Horizonte Consultores S.L.;contacto@horizonte33.example;Barcelona;Turismo;326870
+Faro Digital S.L.;contacto@faro34.example;Zaragoza;Industria;94376
+Norte Ingeniería S.L.;contacto@norte35.example;Vitoria;Tecnología;314925
+Quark Hostelería S.L.;contacto@quark36.example;Bilbao;Salud;374817
+Rumbo Textil S.L.;contacto@rumbo37.example;Málaga;Salud;224632
+Meridiano Consultores S.L.;contacto@meridiano38.example;Sevilla;Industria;127452
+Oasis Alimentación S.L.;contacto@oasis39.example;Madrid;Comercio;332954
+Bahía Logística S.L.;contacto@bahia40.example;Bilbao;Tecnología;97306
+Rumbo Logística S.L.;contacto@rumbo41.example;Vitoria;Tecnología;31369
+Gaia Hostelería S.L.;contacto@gaia42.example;Málaga;Servicios;350613
+Iberia Construcciones S.L.;contacto@iberia43.example;Santander;Comercio;266591
+Delta Logística S.L.;contacto@delta44.example;Barcelona;Salud;269865
+Prisma Digital S.L.;contacto@prisma45.example;Madrid;Servicios;71575
+Faro Ingeniería S.L.;contacto@faro46.example;Bilbao;Servicios;294959
+Lumen Alimentación S.L.;contacto@lumen47.example;Pamplona;Industria;415485
+Quark Digital S.L.;contacto@quark48.example;Madrid;Energía;154899
+Quark Construcciones S.L.;contacto@quark49.example;Valencia;Comercio;134807
+Rumbo Ingeniería S.L.;contacto@rumbo50.example;Pamplona;Comercio;351678</script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- pestañas ---------- */
+var tabs=['t1','t2','t3'];
+function select(id){
+  tabs.forEach(function(t){
+    var on=t===id;
+    $(t).setAttribute('aria-selected',on?'true':'false');
+    $('p'+t.slice(1)).hidden=!on;
+  });
+}
+tabs.forEach(function(t){
+  $(t).addEventListener('click',function(){select(t)});
+  $(t).addEventListener('keydown',function(e){
+    var i=tabs.indexOf(t);
+    if(e.key==='ArrowRight'){select(tabs[(i+1)%3]);$(tabs[(i+1)%3]).focus()}
+    if(e.key==='ArrowLeft'){select(tabs[(i+2)%3]);$(tabs[(i+2)%3]).focus()}
+  });
+});
+
+/* ---------- 1. prompts ---------- */
+var protectedNames=[]; // los nombres cargados en la pestaña 2 se vigilan en el validador
+var RULES={
+  rol:/(act[uú]a como|eres (un|una|el|la)\b|como (un|una) (consultor|experto|especialista|analista|director|estratega)|tu rol (es|ser[aá])|rol:)/i,
+  tarea:/\b(redacta|escribe|analiza|compara|resume|dise[ñn]a|elabora|crea|genera|propon(?:e|er|me)?|prepara|explica|enumera|desarrolla|identifica|eval[uú]a)\b/i,
+  formato:/(tabla|lista|vi[ñn]etas|markdown|tono|palabras|p[aá]rrafos?|formato|estructura|ep[ií]grafes|apartados|esquema|resumen de|en forma de)/i,
+  contextoPalabras:/(dirigid[oa] a|p[uú]blico|cliente|sector|presupuesto|plazo|zona|regi[oó]n|limitaci[oó]n|pyme|empresa|objetivo|mercado|ubicad[oa]|competencia|meses|a[ñn]os)/ig,
+  verificacion:/(fuentes|cita |cita\b|si no est[aá]s segur|no inventes|verific|indica qu[eé] datos)/i,
+  email:/[\w.+-]+@[\w-]+\.[\w.-]+/,
+  tel:/(\+34\s?)?\b[6789]\d{2}[\s.-]?\d{3}[\s.-]?\d{3}\b/,
+  dni:/\b\d{8}[A-Za-z]\b|\b[XYZ]\d{7}[A-Za-z]\b/,
+  iban:/\b[A-Z]{2}\d{2}(?:[\s]?\d{4}){4,6}\b/
+};
+function words(s){var m=s.trim().match(/\S+/g);return m?m.length:0}
+function status(level,label){return '<span class="pill '+level+'">'+label+'</span>'}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+function validate(text){
+  var items=[],ok=0;
+  function add(name,level,msg){items.push({name:name,level:level,msg:msg});if(level==='ok')ok++}
+  // Rol
+  if(RULES.rol.test(text))add('Rol','ok','Define una identidad para la IA.');
+  else add('Rol','bad','Falta el rol. Empieza con «Eres un consultor senior de…» o «Actúa como…».');
+  // Tarea
+  var verb=RULES.tarea.test(text);
+  if(verb&&words(text)>=15)add('Tarea','ok','Hay una acción clara.');
+  else if(verb)add('Tarea','warn','Hay una acción, pero el objeto de la tarea es muy breve. Concreta qué debe producir.');
+  else add('Tarea','bad','Falta un verbo de acción claro (redacta, analiza, compara, diseña…).');
+  // Contexto
+  var hits=(text.match(RULES.contextoPalabras)||[]).length+((text.match(/\d+/g)||[]).length>0?1:0);
+  if(hits>=4)add('Contexto','ok','Incluye datos del cliente, público o limitaciones.');
+  else if(hits>=2)add('Contexto','warn','Algo de contexto. Añade público objetivo, presupuesto, zona o plazo.');
+  else add('Contexto','bad','Falta contexto: ¿para quién es?, ¿con qué presupuesto, plazo o limitaciones?');
+  // Formato
+  var fm=(text.match(new RegExp(RULES.formato.source,'ig'))||[]).length;
+  if(fm>=2)add('Formato','ok','Indica cómo entregar la información.');
+  else if(fm===1)add('Formato','warn','Formato mencionado de pasada. Define estructura, longitud y tono.');
+  else add('Formato','bad','Falta el formato de salida: tabla, lista, número de palabras, tono…');
+  var score=ok;
+  // Extras (no puntúan)
+  var extras=[];
+  var n=words(text);
+  if(n===0)extras.push(['Longitud','bad','El prompt está vacío.']);
+  else if(n<12)extras.push(['Longitud','bad','Solo '+n+' palabras: demasiado corto, dará un resultado genérico.']);
+  else if(n<30)extras.push(['Longitud','warn',n+' palabras: corto. Los buenos prompts suelen necesitar más contexto.']);
+  else extras.push(['Longitud','ok',n+' palabras.']);
+  var leaks=[];
+  if(RULES.email.test(text))leaks.push('un correo electrónico');
+  if(RULES.tel.test(text))leaks.push('un teléfono');
+  if(RULES.dni.test(text))leaks.push('un DNI/NIE');
+  if(RULES.iban.test(text))leaks.push('un IBAN');
+  protectedNames.forEach(function(nm){if(nm&&text.toLowerCase().indexOf(nm.toLowerCase())>-1&&leaks.indexOf('el cliente «'+nm+'»')<0)leaks.push('el cliente «'+nm+'»')});
+  if(leaks.length)extras.push(['Datos sensibles','bad','Aparece '+leaks.join(', ')+'. No lo pegues en una IA sin anonimizar.']);
+  else extras.push(['Datos sensibles','ok','No se detectan correos, teléfonos, DNI, IBAN ni clientes cargados.']);
+  if(RULES.verificacion.test(text))extras.push(['Verificación','ok','Pide fuentes o prudencia ante datos dudosos.']);
+  else extras.push(['Verificación','warn','Sugerencia: añade «cita las fuentes» o «indica si no estás seguro de un dato» para reducir alucinaciones.']);
+  return {items:items,extras:extras,score:score};
+}
+
+function render(){
+  var text=$('prompt').value;
+  if(!text.trim()){$('verdict').innerHTML='';return}
+  var r=validate(text);
+  var lvl=r.score===4?'ok':(r.score>=2?'warn':'bad');
+  var h='<div class="score">Estructura: '+r.score+' de 4 componentes '+status(lvl,r.score===4?'completa':'incompleta')+'</div><div class="result">';
+  r.items.concat(r.extras.map(function(e){return {name:e[0],level:e[1],msg:e[2]}})).forEach(function(i){
+    var lab={ok:'Correcto',warn:'Mejorable',bad:'Falta'}[i.level];
+    if(['Longitud','Datos sensibles','Verificación'].indexOf(i.name)>-1)lab={ok:'Correcto',warn:'Sugerencia',bad:'Atención'}[i.level];
+    h+='<div><b>'+esc(i.name)+'</b>'+status(i.level,lab)+'<span>'+esc(i.msg)+'</span></div>';
+  });
+  $('verdict').innerHTML=h+'</div>';
+}
+function build(){
+  var p=[];
+  if($('f-rol').value.trim())p.push('Rol: '+$('f-rol').value.trim());
+  if($('f-tarea').value.trim())p.push('Tarea: '+$('f-tarea').value.trim());
+  if($('f-ctx').value.trim())p.push('Contexto: '+$('f-ctx').value.trim());
+  if($('f-fmt').value.trim())p.push('Formato: '+$('f-fmt').value.trim());
+  $('prompt').value=p.join('\n\n');
+  render();
+}
+function load(rol,tarea,ctx,fmt){$('f-rol').value=rol;$('f-tarea').value=tarea;$('f-ctx').value=ctx;$('f-fmt').value=fmt;build()}
+$('build').addEventListener('click',build);
+$('prompt').addEventListener('input',render);
+$('ex-simple').addEventListener('click',function(){
+  load('','Escribe una estrategia de marketing para una empresa de paneles solares','','');
+});
+$('ex-opt').addEventListener('click',function(){
+  load('Eres un consultor senior de marketing estratégico especializado en energía renovable.',
+    'Redacta una propuesta de estrategia de marketing digital para captar clientes residenciales durante los próximos 6 meses.',
+    'Cliente: pyme instaladora de paneles solares en Bizkaia con 12 empleados y presupuesto de marketing de 15.000 €. Público objetivo: propietarios de viviendas unifamiliares entre 35 y 60 años. Limitación: sin equipo interno de diseño. Objetivo: 40 solicitudes de presupuesto cualificadas.',
+    'Una tabla en markdown con acción, canal, coste estimado y plazo; después un resumen ejecutivo de 120 palabras en tono profesional y cercano. Cita las fuentes de cualquier dato de mercado e indica si no estás seguro de alguno.');
+});
+$('ex-clear').addEventListener('click',function(){load('','','','');$('prompt').value='';$('verdict').innerHTML=''});
+function copy(text,msg){
+  function done(){$('copied').textContent=msg;setTimeout(function(){$('copied').textContent=''},2500)}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){$('copied').textContent='No se pudo copiar; selecciona el texto a mano.'})}
+  else{$('copied').textContent='Tu navegador no permite copiar desde aquí; selecciona el texto a mano.'}
+}
+$('copy').addEventListener('click',function(){copy($('prompt').value,'Prompt copiado.')});
+$('copy-review').addEventListener('click',function(){
+  var t='Actúa como un experto en ingeniería de prompts. Evalúa el siguiente prompt según la fórmula Rol + Tarea + Contexto + Formato. Para cada componente indica si está presente y si es suficientemente concreto, señala qué falta y propón una versión mejorada. Si algún dato del prompt podría ser confidencial, avísame. Responde con una tabla y después la versión mejorada.\n\nPrompt a evaluar:\n"""\n'+$('prompt').value+'\n"""';
+  copy(t,'Prompt de revisión copiado: pégalo en tu ChatGPT.');
+});
+
+/* ---------- 2. anonimización ---------- */
+var table=null; // {header:[], rows:[[]]}
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');
+  var first=text.split(/\r?\n/)[0]||'';
+  var delim=(first.split(';').length>first.split(',').length)?';':',';
+  var rows=[],row=[],cell='',q=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(q){
+      if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c;
+    }else if(c==='"')q=true;
+    else if(c===delim){row.push(cell);cell=''}
+    else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}
+    else if(c!=='\r')cell+=c;
+  }
+  if(cell!==''||row.length){row.push(cell);rows.push(row)}
+  return rows.filter(function(r){return r.some(function(x){return x.trim()!==''})});
+}
+function toNumber(s){
+  s=String(s).replace(/[€$£\s]/g,'');
+  if(s==='')return NaN;
+  if(s.indexOf(',')>-1&&s.indexOf('.')>-1){
+    if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'');
+  }else if(s.indexOf(',')>-1)s=s.replace(',','.');
+  return /^-?\d+(\.\d+)?$/.test(s)?parseFloat(s):NaN;
+}
+function setTable(rows){
+  if(rows.length<2){alert('El archivo no tiene filas de datos.');return}
+  table={header:rows[0].map(function(h){return String(h)}),rows:rows.slice(1)};
+  showColumns();
+}
+function numericCols(){
+  return table.header.map(function(_,c){
+    var vals=table.rows.map(function(r){return r[c]}).filter(function(v){return v!==undefined&&String(v).trim()!==''});
+    return vals.length>0&&vals.every(function(v){return !isNaN(toNumber(v))});
+  });
+}
+function showColumns(){
+  var nums=numericCols(),hn='',hm='';
+  table.header.forEach(function(h,c){
+    var guess=!nums[c]&&/(nombre|cliente|empresa|raz[oó]n|name|customer|contacto|email|correo)/i.test(h);
+    hn+='<label style="font-weight:400;margin:4px 0"><input type="checkbox" name="cn" value="'+c+'"'+(guess?' checked':'')+(nums[c]?' disabled':'')+'> '+esc(h)+'</label>';
+    if(nums[c])hm+='<div class="row" style="margin-bottom:6px"><div><b>'+esc(h)+'</b></div><div><select data-num="'+c+'" aria-label="Tratamiento de '+esc(h)+'"><option value="index">Índice (media = 100)</option><option value="quartile">Cuartil (Q1 a Q4)</option><option value="keep">Mantener el valor</option></select></div></div>';
+  });
+  $('cols-names').innerHTML=hn;
+  $('cols-nums').innerHTML=hm||'<p class="hint">No se detectan columnas numéricas.</p>';
+  $('anon-ui').hidden=false;$('anon-out').hidden=true;
+  var flags=[];
+  var count={email:0,tel:0,dni:0,iban:0};
+  table.rows.forEach(function(r){r.forEach(function(v){
+    v=String(v);
+    if(RULES.email.test(v))count.email++;
+    if(RULES.dni.test(v))count.dni++;
+    if(RULES.iban.test(v))count.iban++;
+    if(RULES.tel.test(v)&&isNaN(toNumber(v)))count.tel++;
+  })});
+  if(count.email||count.tel||count.dni||count.iban)flags.push('Se detectaron datos personales en celdas (correos: '+count.email+', teléfonos: '+count.tel+', DNI/NIE: '+count.dni+', IBAN: '+count.iban+'). Se enmascararán automáticamente.');
+  $('auto-flags').innerHTML=flags.length?'<div class="note">'+esc(flags.join(' '))+'</div>':'';
+}
+function label(n){ // 0 -> A, 25 -> Z, 26 -> AA
+  var s='';n++;
+  while(n>0){var m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}
+  return s;
+}
+function mask(v){
+  v=String(v);
+  return v.replace(new RegExp(RULES.email.source,'g'),'[correo]').replace(new RegExp(RULES.dni.source,'g'),'[documento]').replace(new RegExp(RULES.iban.source,'g'),'[IBAN]').replace(new RegExp(RULES.tel.source,'g'),function(m){return /^\d+$/.test(m)&&m.length<9?m:'[teléfono]'});
+}
+function quartiles(vals){
+  var s=vals.slice().sort(function(a,b){return a-b});
+  function q(p){var i=(s.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return s[lo]+(s[hi]-s[lo])*(i-lo)}
+  return [q(.25),q(.5),q(.75)];
+}
+var clean=null,map=null;
+function run(){
+  var nameCols=Array.prototype.map.call(document.querySelectorAll('input[name=cn]:checked'),function(i){return +i.value});
+  var treat={};
+  Array.prototype.forEach.call(document.querySelectorAll('select[data-num]'),function(s){treat[+s.getAttribute('data-num')]=s.value});
+  var labels={},mapRows=[],nextId=0;
+  protectedNames=[];
+  var cleanRows=table.rows.map(function(r){return r.map(function(v){return v===undefined?'':v})});
+  nameCols.forEach(function(c,idx){
+    var prefix=idx===0?'Cliente':String(table.header[c]).trim()||'Dato',counter=0;
+    cleanRows.forEach(function(r){
+      var orig=String(r[c]).trim();
+      if(orig==='')return;
+      var key=c+'|'+orig.toLowerCase();
+      if(!(key in labels)){labels[key]=prefix+' '+label(idx===0?nextId++:counter++);mapRows.push([labels[key],orig,table.header[c]]);protectedNames.push(orig)}
+      r[c]=labels[key];
+    });
+  });
+  Object.keys(treat).forEach(function(k){
+    var c=+k,mode=treat[k];
+    if(mode==='keep')return;
+    var vals=cleanRows.map(function(r){return toNumber(r[c])}).filter(function(v){return !isNaN(v)});
+    var mean=vals.reduce(function(a,b){return a+b},0)/vals.length;
+    var qs=quartiles(vals);
+    cleanRows.forEach(function(r){
+      var v=toNumber(r[c]);
+      if(isNaN(v))return;
+      if(mode==='index')r[c]=mean?String(Math.round(v/mean*100)):'0';
+      else r[c]=v<=qs[0]?'Q1 (bajo)':v<=qs[1]?'Q2':v<=qs[2]?'Q3':'Q4 (alto)';
+    });
+  });
+  var header=table.header.map(function(h,c){return treat[c]==='index'?h+' (índice, media=100)':treat[c]==='quartile'?h+' (cuartil)':h});
+  cleanRows=cleanRows.map(function(r){return r.map(mask)});
+  clean={header:header,rows:cleanRows};
+  map={header:['Etiqueta','Valor original','Columna'],rows:mapRows};
+  var h='<table><thead><tr>'+header.map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr></thead><tbody>';
+  cleanRows.slice(0,50).forEach(function(r){h+='<tr>'+r.map(function(x){return '<td>'+esc(x)+'</td>'}).join('')+'</tr>'});
+  $('prev').innerHTML=h+'</tbody></table>';
+  $('anon-out').hidden=false;
+  render();
+}
+function toCSV(t){
+  function q(v){v=String(v);return /[",;\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  return '﻿'+[t.header].concat(t.rows).map(function(r){return r.map(q).join(';')}).join('\r\n');
+}
+function download(name,text,type){
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:type||'text/csv;charset=utf-8'}));
+  a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+}
+$('anon-run').addEventListener('click',run);
+$('dl-clean').addEventListener('click',function(){if(clean)download('clientes_anonimizados.csv',toCSV(clean))});
+$('dl-map').addEventListener('click',function(){if(map)download('tabla_equivalencias_PRIVADA.csv',toCSV(map))});
+$('load-sample').addEventListener('click',function(){setTable(parseCSV($('sample-csv').textContent.trim()))});
+$('file').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  var reader=new FileReader();
+  if(/\.xlsx?$/i.test(f.name)){
+    if(!window.XLSX){alert('No se pudo cargar el lector de Excel (¿sin conexión?). Guarda el archivo como CSV y vuelve a subirlo.');return}
+    reader.onload=function(){
+      var wb=XLSX.read(reader.result,{type:'array'});
+      var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:''});
+      setTable(rows.filter(function(r){return r.some(function(x){return String(x).trim()!==''})}));
+    };
+    reader.readAsArrayBuffer(f);
+  }else{
+    reader.onload=function(){setTable(parseCSV(String(reader.result)))};
+    reader.readAsText(f,'utf-8');
+  }
+});
+
+/* ---------- 3. human-in-the-loop ---------- */
+var CHECKS=[
+  'He comprobado cada cifra, fecha y nombre propio contra una fuente fiable.',
+  'He verificado que las fuentes citadas existen y dicen lo que el texto afirma (la IA puede inventar referencias).',
+  'El texto no contiene datos confidenciales ni identifica a clientes sin su permiso.',
+  'He revisado el tono y la adecuación al cliente y al sector.',
+  'He eliminado o corregido las afirmaciones que no puedo respaldar.',
+  'Asumo la responsabilidad profesional del contenido que se envía al cliente.'
+];
+var cl='';
+CHECKS.forEach(function(t,i){cl+='<li><input type="checkbox" id="ck'+i+'"><label for="ck'+i+'" style="font-weight:400;margin:0">'+esc(t)+'</label></li>'});
+$('checks').innerHTML=cl;
+$('when').value=new Date().toISOString().slice(0,10);
+function gate(){
+  var all=CHECKS.every(function(_,i){return $('ck'+i).checked});
+  var has=$('draft').value.trim()!==''&&$('who').value.trim()!=='';
+  $('exp-txt').disabled=$('exp-pdf').disabled=!(all&&has);
+  $('gate').textContent=all&&has?'Lista completa: puedes exportar.':'Para exportar: pega el borrador, marca todas las casillas e indica quién revisa.';
+}
+CHECKS.forEach(function(_,i){$('ck'+i).addEventListener('change',gate)});
+$('draft').addEventListener('input',gate);$('who').addEventListener('input',gate);gate();
+function reportText(){
+  return 'INFORME REVISADO POR UNA PERSONA\n'+'Revisión: '+$('who').value.trim()+' · '+$('when').value+'\n\nVERIFICACIONES REALIZADAS\n'+CHECKS.map(function(t){return '[x] '+t}).join('\n')+'\n\nTEXTO REVISADO\n'+$('draft').value.trim()+'\n';
+}
+$('exp-txt').addEventListener('click',function(){download('informe_revisado.txt',reportText(),'text/plain;charset=utf-8')});
+$('exp-pdf').addEventListener('click',function(){
+  var r=$('report');
+  r.innerHTML='<h2>Informe revisado por una persona</h2><p>Revisión: '+esc($('who').value.trim())+' · '+esc($('when').value)+'</p><h3>Verificaciones realizadas</h3><ul>'+CHECKS.map(function(t){return '<li>☑ '+esc(t)+'</li>'}).join('')+'</ul><h3>Texto revisado</h3><pre>'+esc($('draft').value.trim())+'</pre>';
+  r.hidden=false;
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(function(){document.body.classList.remove('printing');r.hidden=true},300);
+});
+
+})();
+</script>
+</body>
+</html>
