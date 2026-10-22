@@ -2,13 +2,13 @@
 
 Complemento interactivo del trabajo final del curso *ChatGPT e Inteligencia Artificial Profesional*: «Implementación estratégica de ChatGPT en el entorno profesional».
 
-Es una única página web que pone en práctica la teoría de los cuatro apartados del trabajo.
+Es una única página web que pone en práctica la teoría del trabajo. Incluye una pestaña de inicio, un caso guiado con el prompt de Javier y archivos de ejemplo (CSV y Excel).
 
 ## Qué incluye
 
 1. **Constructor y validador de prompts.** Fórmula Rol + Tarea + Contexto + Formato. El validador comprueba por reglas que cada componente esté presente, avisa de datos sensibles (correos, teléfonos, DNI, IBAN) y sugiere pedir fuentes para reducir alucinaciones. Incluye un botón para copiar un prompt de revisión que se pega en el propio ChatGPT.
-2. **Anonimización de datos.** Sube un CSV o Excel de prueba, elige las columnas con nombres y la página los sustituye por «Cliente A, B…», convierte los importes en índice o cuartil, enmascara datos personales y genera la tabla de equivalencias aparte.
-3. **Human-in-the-loop.** Lista de verificación obligatoria y exportación del informe revisado (texto o PDF) con el nombre del responsable.
+2. **Anonimización de datos.** Sube un CSV o Excel de prueba, elige las columnas con nombres y la página los sustituye por «Cliente A, B…», convierte los importes en índice o cuartil, enmascara datos personales avisa de las filas identificables por combinación de columnas (con opción de generalizar la ciudad a comunidad autónoma), genera la tabla de equivalencias y permite restaurar los nombres en la respuesta de la IA.
+3. **Human-in-the-loop.** Lista de verificación obligatoria que crece con el riesgo del informe (interno, cliente, decisión importante) y exportación del informe revisado (texto o PDF) con el nombre del responsable.
 
 ## Privacidad
 
@@ -26,4 +26,4 @@ Abre `index.html` en un navegador, o la versión publicada en GitHub Pages.
 
 ## Autoría
 
-jlasenjo
+Desarrollado por Jose Luis Asenjo para el curso ChatGPT 2026. Contacto: asenjo.jose@hotmail.com · https://www.linkedin.com/in/joseluisasenjo
