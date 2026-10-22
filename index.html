@@ -79,6 +79,16 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
     <li><div><b>3 · Human-in-the-loop</b> (apartado 4, ética y responsabilidad). Verificación humana obligatoria antes de enviar un informe generado con IA. <a href="#" data-go="t3">Abrir</a></div></li>
   </ul>
   <p>Para probarlo sin preparar nada: en la pestaña 1 pulsa «Ver el caso de Javier», y en la 2 usa los 50 clientes de ejemplo (también en <a href="ejemplo.csv" download>CSV</a>). Todo se ejecuta en tu navegador: lo que escribes y los archivos que usas no salen de él.</p>
+  <div class="card" id="notes-card">
+    <h3>Mis notas (privadas)</h3>
+    <p class="hint">Apunta aquí los prompts que te han funcionado. Se guardan solo en este navegador y en este dispositivo: no se envían a ningún sitio y nadie más puede verlas. Se borran si limpias los datos del navegador, así que descarga una copia si te importan. No escribas datos reales de clientes.</p>
+    <label for="notes">Tus notas</label>
+    <textarea id="notes" style="min-height:160px" placeholder="Ej.: Rol: consultor de marketing… (prompt que me funcionó)"></textarea>
+    <button class="btn" id="notes-add" type="button">Añadir el prompt del constructor</button>
+    <button class="btn sec" id="notes-dl" type="button">Descargar como texto</button>
+    <button class="btn sec" id="notes-clear" type="button">Borrar todo</button>
+    <span id="notes-status" class="hint" role="status" aria-live="polite"></span>
+  </div>
 </section>
 
 <section class="panel" id="p1" role="tabpanel" aria-labelledby="t1" hidden>
@@ -218,7 +228,7 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
   <p>Desarrollado por Jose Luis Asenjo, para el curso ChatGPT 2026.<br>
   Contacto: <span id="contact-mail"><noscript>activa JavaScript para ver el correo, o usa LinkedIn</noscript></span><br>
   LinkedIn: <a href="https://www.linkedin.com/in/joseluisasenjo" target="_blank" rel="noopener">www.linkedin.com/in/joseluisasenjo</a></p>
-  <p>Sin cookies. Las visitas se cuentan de forma anónima con GoatCounter, sin datos personales; lo que escribes y los archivos que usas en la herramienta no salen de tu navegador. El código es público y se puede revisar.</p>
+  <p>Sin cookies. Las notas que escribes se guardan solo en tu navegador. Las visitas se cuentan de forma anónima con GoatCounter, sin datos personales; lo que escribes y los archivos que usas en la herramienta no salen de tu navegador. El código es público y se puede revisar.</p>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
@@ -307,6 +317,33 @@ tabs.forEach(function(t){
 });
 
 Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(a){a.addEventListener('click',function(e){e.preventDefault();select(a.getAttribute('data-go'));window.scrollTo(0,0)})});
+
+/* ---------- bloc de notas privado (solo en este navegador) ---------- */
+(function(){
+  var KEY='notas-curso-prompts',timer=null,box=$('notes'),st=$('notes-status');
+  function read(){try{return localStorage.getItem(KEY)||''}catch(e){return ''}}
+  function save(){
+    try{localStorage.setItem(KEY,box.value);st.textContent='Guardado en este navegador.'}
+    catch(e){st.textContent='Tu navegador no permite guardar: descarga las notas como texto.'}
+  }
+  box.value=read();
+  box.addEventListener('input',function(){clearTimeout(timer);st.textContent='';timer=setTimeout(save,400)});
+  $('notes-add').addEventListener('click',function(){
+    var p=$('prompt').value.trim();
+    if(!p){st.textContent='No hay ningún prompt en el constructor (pestaña 1).';return}
+    var stamp=new Date().toLocaleDateString('es-ES');
+    box.value=(box.value.trim()?box.value.replace(/\s+$/,'')+'\n\n':'')+'--- '+stamp+' ---\n'+p+'\n';
+    save();
+  });
+  $('notes-dl').addEventListener('click',function(){
+    if(!box.value.trim()){st.textContent='No hay nada que descargar.';return}
+    download('mis_notas_prompts.txt',box.value,'text/plain;charset=utf-8');
+  });
+  $('notes-clear').addEventListener('click',function(){
+    if(!box.value.trim())return;
+    if(window.confirm('¿Borrar todas tus notas de este navegador? No se puede deshacer.')){box.value='';save();st.textContent='Notas borradas.'}
+  });
+})();
 
 /* ---------- 1. prompts ---------- */
 var protectedNames=[]; // los nombres cargados en la pestaña 2 se vigilan en el validador
