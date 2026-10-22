@@ -182,7 +182,7 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
 <div id="report" hidden style="max-width:900px;margin:0 auto;padding:16px"></div>
 <footer>
   <p>Desarrollado por Jose Luis Asenjo, para el curso ChatGPT 2026.<br>
-  Contacto: <a href="mailto:asenjo.jose@hotmail.com">asenjo.jose@hotmail.com</a><br>
+  Contacto: <span id="contact-mail"><noscript>activa JavaScript para ver el correo, o usa LinkedIn</noscript></span><br>
   LinkedIn: <a href="https://www.linkedin.com/in/joseluisasenjo" target="_blank" rel="noopener">www.linkedin.com/in/joseluisasenjo</a></p>
   <p>Sin cookies, sin seguimiento y sin envío de datos. El código es público y se puede revisar.</p>
 </footer>
@@ -243,6 +243,16 @@ Rumbo Ingeniería S.L.;contacto@rumbo50.example;Pamplona;Comercio;351678</script
 (function(){
 'use strict';
 var $=function(id){return document.getElementById(id)};
+
+/* ---------- correo de contacto: se monta al cargar, no aparece en el HTML como texto ---------- */
+(function(){
+  var p=['asenjo','jose','hotmail','com'];
+  var addr=p[0]+'.'+p[1]+String.fromCharCode(64)+p[2]+'.'+p[3];
+  var a=document.createElement('a');
+  a.href='mailto:'+addr;a.textContent=addr;
+  var host=document.getElementById('contact-mail');
+  if(host)host.appendChild(a);
+})();
 
 /* ---------- pestañas ---------- */
 var tabs=['t0','t1','t2','t3'];

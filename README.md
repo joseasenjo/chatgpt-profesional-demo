@@ -26,4 +26,4 @@ Abre `index.html` en un navegador, o la versión publicada en GitHub Pages.
 
 ## Autoría
 
-Desarrollado por Jose Luis Asenjo para el curso ChatGPT 2026. Contacto: asenjo.jose@hotmail.com · https://www.linkedin.com/in/joseluisasenjo
+Desarrollado por Jose Luis Asenjo para el curso ChatGPT 2026. Contacto: https://www.linkedin.com/in/joseluisasenjo
