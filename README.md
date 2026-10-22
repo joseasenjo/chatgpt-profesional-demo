@@ -12,7 +12,7 @@ Es una única página web que pone en práctica la teoría del trabajo. Incluye 
 
 ## Privacidad
 
-Todo se ejecuta en el navegador. Los archivos no se envían a ningún servidor, no hay cookies ni seguimiento. El único recurso externo es la librería SheetJS (cdnjs) para leer archivos Excel; con CSV no hace falta.
+Todo se ejecuta en el navegador: los textos y archivos que usas no se envían a ningún servidor y no hay cookies. Lo único que se envía es un recuento anónimo de visitas a GoatCounter (sin datos personales; las cifras solo las ve el autor). Los recursos externos son ese contador y la librería SheetJS (cdnjs) para leer archivos Excel; con CSV no hace falta.
 
 Los datos de `ejemplo.csv` son ficticios. No subas datos reales de clientes a un repositorio público.
 

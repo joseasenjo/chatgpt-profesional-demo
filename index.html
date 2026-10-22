@@ -60,7 +60,7 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
 <body>
 <header>
   <h1>ChatGPT profesional · demostración</h1>
-  <p class="lead">Trabajo final: implementación estratégica de ChatGPT en el entorno profesional. Tres herramientas que ponen en práctica la teoría. Todo se ejecuta en tu navegador: no se envía ningún dato a ningún servidor.</p>
+  <p class="lead">Trabajo final: implementación estratégica de ChatGPT en el entorno profesional. Tres herramientas que ponen en práctica la teoría. Todo se ejecuta en tu navegador: lo que escribes y los archivos que usas no salen de él.</p>
   <nav role="tablist" aria-label="Herramientas">
     <button role="tab" id="t0" aria-selected="true" aria-controls="p0">Inicio</button>
     <button role="tab" id="t1" aria-selected="false" aria-controls="p1">1 · Prompts</button>
@@ -78,7 +78,7 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
     <li><div><b>2 · Privacidad</b> (apartado 3, privacidad y seguridad digital). Anonimiza un archivo de clientes antes de dárselo a una IA y recupera los nombres después. <a href="#" data-go="t2">Abrir</a></div></li>
     <li><div><b>3 · Human-in-the-loop</b> (apartado 4, ética y responsabilidad). Verificación humana obligatoria antes de enviar un informe generado con IA. <a href="#" data-go="t3">Abrir</a></div></li>
   </ul>
-  <p>Para probarlo sin preparar nada: en la pestaña 1 pulsa «Ver el caso de Javier», y en la 2 usa los 50 clientes de ejemplo (también en <a href="ejemplo.csv" download>CSV</a>). Todo se ejecuta en tu navegador y no se envía ningún dato a ningún servidor.</p>
+  <p>Para probarlo sin preparar nada: en la pestaña 1 pulsa «Ver el caso de Javier», y en la 2 usa los 50 clientes de ejemplo (también en <a href="ejemplo.csv" download>CSV</a>). Todo se ejecuta en tu navegador: lo que escribes y los archivos que usas no salen de él.</p>
 </section>
 
 <section class="panel" id="p1" role="tabpanel" aria-labelledby="t1" hidden>
@@ -218,7 +218,7 @@ footer{color:var(--muted);font-size:.85rem;padding-bottom:32px}
   <p>Desarrollado por Jose Luis Asenjo, para el curso ChatGPT 2026.<br>
   Contacto: <span id="contact-mail"><noscript>activa JavaScript para ver el correo, o usa LinkedIn</noscript></span><br>
   LinkedIn: <a href="https://www.linkedin.com/in/joseluisasenjo" target="_blank" rel="noopener">www.linkedin.com/in/joseluisasenjo</a></p>
-  <p>Sin cookies, sin seguimiento y sin envío de datos. El código es público y se puede revisar.</p>
+  <p>Sin cookies. Las visitas se cuentan de forma anónima con GoatCounter, sin datos personales; lo que escribes y los archivos que usas en la herramienta no salen de tu navegador. El código es público y se puede revisar.</p>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
@@ -828,5 +828,6 @@ $('exp-pdf').addEventListener('click',function(){
 
 })();
 </script>
+<script data-goatcounter="https://cuenta.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
